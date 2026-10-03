@@ -43,6 +43,20 @@ public class CategoriePage extends BasePage {
         return By.xpath("//tr[contains(., '" + testo + "')]");
     }
 
+    // La cella "Nome" nella riga di quella categoria
+    private static By cellaNome(String nome) {
+        return By.xpath("//tr[contains(., '" + nome + "')]//td[contains(@class, 'mat-column-nome')]");
+    }
+
+    // ---------------------------------------------------------------
+    // Navigazione diretta
+    // ---------------------------------------------------------------
+
+    // Apre il form di una categoria direttamente dall'URL, es. /categorie/999999
+    public void apriCategoriaPerId(int id) {
+        apri("/categorie/" + id);
+    }
+
     // ---------------------------------------------------------------
     // Azioni - lista
     // ---------------------------------------------------------------
@@ -138,8 +152,16 @@ public class CategoriePage extends BasePage {
     }
 
     public String nomeInLista(String nome) {
-        return leggiTesto(By.xpath(
-                "//tr[contains(., '" + nome + "')]//td[contains(@class, 'mat-column-nome')]")).strip();
+        return leggiTesto(cellaNome(nome)).strip();
+    }
+
+    // Quanti elementi <tag> ci sono DENTRO la cella del nome.
+    // Se il nome contiene "<b>Dolci</b>" e la pagina è sicura, deve essere 0:
+    // il tag va mostrato come testo, non interpretato come grassetto.
+    public int contaTagNelNome(String nome, String tag) {
+        attendiVisibile(cellaNome(nome));
+        return driver.findElements(By.xpath(
+                "//tr[contains(., '" + nome + "')]//td[contains(@class, 'mat-column-nome')]//" + tag)).size();
     }
 
     public String valoreDescrizioneNelForm() {
@@ -152,5 +174,10 @@ public class CategoriePage extends BasePage {
 
     public String erroreNelForm() {
         return leggiTesto(erroreForm);
+    }
+
+    // Notifica temporanea di Angular Material (MatSnackBar), come "Verifica Notifica" in Robot
+    public boolean isNotificaVisibile(String testo) {
+        return isVisibile(By.xpath("//mat-snack-bar-container[contains(., '" + testo + "')]"));
     }
 }

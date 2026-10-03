@@ -1,6 +1,7 @@
 package gestionale.hooks;
 
 import gestionale.support.ApiClient;
+import gestionale.support.ContestoTest;
 import gestionale.support.DriverManager;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
@@ -27,7 +28,10 @@ public class Hooks {
         DriverManager.getDriver();
     }
 
-    // Dopo ogni scenario: se è fallito salva screenshot e HTML, poi chiude il browser
+    // Dopo ogni scenario, in quest'ordine:
+    // 1. se è fallito, screenshot e HTML (prima che la pagina cambi)
+    // 2. cancella i dati creati dallo scenario
+    // 3. chiude il browser
     @After
     public void chiudiBrowser(Scenario scenario) {
         try {
@@ -36,8 +40,14 @@ public class Hooks {
                 salvaHtml(scenario);
             }
         } finally {
-            // "finally": il browser si chiude anche se lo screenshot va in errore
-            DriverManager.chiudiDriver();
+            try {
+                ContestoTest.pulisciDatiCreati();
+            } catch (Exception e) {
+                // La pulizia non deve impedire la chiusura del browser
+                System.err.println("Pulizia dati non riuscita: " + e.getMessage());
+            } finally {
+                DriverManager.chiudiDriver();
+            }
         }
     }
 
