@@ -17,6 +17,7 @@
         <junit.version>5.11.4</junit.version>
         <junit.platform.version>1.11.4</junit.platform.version>
         <datafaker.version>2.4.2</datafaker.version>
+        <rest-assured.version>5.5.0</rest-assured.version>
     </properties>
 
     <dependencies>
@@ -64,6 +65,14 @@
             <groupId>net.datafaker</groupId>
             <artifactId>datafaker</artifactId>
             <version>${datafaker.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- REST Assured: chiamate API per preparare i dati e verificare il backend -->
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <version>${rest-assured.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
