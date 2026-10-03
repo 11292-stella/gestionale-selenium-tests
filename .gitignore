@@ -1,0 +1,16 @@
+# Maven
+target/
+
+# IntelliJ
+.idea/
+*.iml
+out/
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Report e log
+allure-results/
+allure-report/
+*.log
