@@ -12,6 +12,10 @@ import java.util.Map;
 
 public final class ApiClient {
 
+    // Stessa foto di default del progetto Robot
+    public static final String IMMAGINE_PREDEFINITA =
+            "https://images.unsplash.com/photo-1534778101976-62847782c213?w=500";
+
     // Trasforma le Map in JSON (è già dentro Selenium, non serve Jackson)
     private static final Json JSON = new Json();
 
@@ -114,31 +118,30 @@ public final class ApiClient {
 
     // Per le categorie create dalla UI (id sconosciuto). Se non la trova non fa nulla.
     public static void eliminaCategoriaPerNome(String nome) {
-        List<Map<String, Object>> categorie = richiestaAutenticata().get("/api/Categoria")
-                .then().statusCode(200)
-                .extract().jsonPath().getList("$");
-
-        for (Map<String, Object> c : categorie) {
-            if (nome.equals(c.get("nome"))) {
-                elimina("/api/Categoria/" + c.get("id"));
-            }
-        }
+        eliminaPerNome("/api/Categoria", nome);
     }
 
     // ---------------------------------------------------------------
-    // Prodotti (servono per i test "categoria con prodotti")
+    // Prodotti
     // ---------------------------------------------------------------
 
-    // POST /api/Prodotto -> 201. Restituisce l'id.
+    // Prodotto "standard": attivo, non esaurito, 5.50 €, costo 2.00 €, con foto
     public static int creaProdotto(String nome, int categoriaId) {
+        return creaProdotto(nome, categoriaId, true, false, 5.5, 2.0, IMMAGINE_PREDEFINITA);
+    }
+
+    // POST /api/Prodotto -> 201. Restituisce l'id. immagineUrl null = senza foto.
+    public static int creaProdotto(String nome, int categoriaId, boolean attivo, boolean esaurito,
+                                   double prezzo, double costo, String immagineUrl) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("nome", nome);
         body.put("descrizione", "Creato dai test Selenium");
-        body.put("prezzo", 5.5);
-        body.put("costoProduzione", 2.0);
-        body.put("attivo", true);
-        body.put("esaurito", false);
+        body.put("prezzo", prezzo);
+        body.put("costoProduzione", costo);
+        body.put("attivo", attivo);
+        body.put("esaurito", esaurito);
         body.put("categoriaId", categoriaId);
+        body.put("immagineUrl", immagineUrl);
 
         return richiestaAutenticata().body(JSON.toJson(body))
                 .post("/api/Prodotto")
@@ -150,6 +153,20 @@ public final class ApiClient {
         return richiestaAutenticata().get("/api/Prodotto/" + id);
     }
 
+    // Quanti prodotti hanno ESATTAMENTE quel nome
+    public static int contaProdottiConNome(String nome) {
+        List<String> nomi = richiestaAutenticata().get("/api/Prodotto")
+                .then().statusCode(200)
+                .extract().jsonPath().getList("nome", String.class);
+
+        return (int) nomi.stream().filter(nome::equals).count();
+    }
+
+    // Per i prodotti creati dalla UI (id sconosciuto). Se non lo trova non fa nulla.
+    public static void eliminaProdottoPerNome(String nome) {
+        eliminaPerNome("/api/Prodotto", nome);
+    }
+
     // ---------------------------------------------------------------
     // Generico
     // ---------------------------------------------------------------
@@ -157,5 +174,18 @@ public final class ApiClient {
     // DELETE generico: 204 se ok, 404 se già cancellato. Non controlla lo status, come in Robot.
     public static void elimina(String percorso) {
         richiestaAutenticata().delete(percorso);
+    }
+
+    // Legge tutta la lista e cancella gli elementi con quel nome esatto
+    private static void eliminaPerNome(String percorso, String nome) {
+        List<Map<String, Object>> elementi = richiestaAutenticata().get(percorso)
+                .then().statusCode(200)
+                .extract().jsonPath().getList("$");
+
+        for (Map<String, Object> e : elementi) {
+            if (nome.equals(e.get("nome"))) {
+                elimina(percorso + "/" + e.get("id"));
+            }
+        }
     }
 }

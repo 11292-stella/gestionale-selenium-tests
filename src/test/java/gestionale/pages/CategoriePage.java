@@ -1,10 +1,11 @@
 package gestionale.pages;
 
-import org.openqa.selenium.Alert;
 import org.openqa.selenium.By;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
-public class CategoriePage extends BasePage {
+// Titolo, Salva, Annulla, errore, notifica e confirm arrivano da FormPage
+public class CategoriePage extends FormPage {
 
     // ---------------------------------------------------------------
     // Selettori (presi da categorie_page.resource)
@@ -18,25 +19,6 @@ public class CategoriePage extends BasePage {
     // Form crea/modifica
     private final By inputNome = campo("Nome");
     private final By inputDescrizione = campo("Descrizione");
-    private final By bottoneSalva = bottone("Salva");
-    private final By bottoneAnnulla = bottone("Annulla");
-    private final By titoloPagina = By.cssSelector("mat-card h2");
-    private final By erroreForm = By.cssSelector(".stato-errore");
-
-    // In Robot era role=textbox[name="..."]: il nome accessibile può venire
-    // dalla mat-label, dal placeholder o da aria-label. Li proviamo tutti e tre.
-    private static By campo(String etichetta) {
-        return By.xpath("//*[self::input or self::textarea]["
-                + "@placeholder='" + etichetta + "' or @aria-label='" + etichetta + "'"
-                + " or ancestor::mat-form-field[.//mat-label[normalize-space()='" + etichetta + "']]]");
-    }
-
-    // In Robot era role=button[name="..."].
-    // Cerca un bottone che contiene un pezzo di testo ESATTAMENTE uguale:
-    // così ignora le icone Material (es. <mat-icon>add</mat-icon>)
-    private static By bottone(String testo) {
-        return By.xpath("//button[.//text()[normalize-space()='" + testo + "']]");
-    }
 
     // La riga della tabella che contiene quel testo (come tr:has-text("..."))
     private static By riga(String testo) {
@@ -84,15 +66,7 @@ public class CategoriePage extends BasePage {
     // Cestino + risposta al confirm() del browser. Restituisce il testo del confirm.
     public String elimina(String nome, boolean conferma) {
         clicca(By.xpath("//tr[contains(., '" + nome + "')]//button[@mattooltip='Elimina']"));
-
-        Alert alert = wait.until(ExpectedConditions.alertIsPresent());
-        String testo = alert.getText();
-        if (conferma) {
-            alert.accept();     // OK
-        } else {
-            alert.dismiss();    // Annulla
-        }
-        return testo;
+        return rispondiAlConfirm(conferma);
     }
 
     // ---------------------------------------------------------------
@@ -114,11 +88,6 @@ public class CategoriePage extends BasePage {
         wait.until(ExpectedConditions.urlMatches(".*/categorie$"));
     }
 
-    // Solo il click: per i casi in cui il salvataggio deve fallire
-    public void cliccaSalva() {
-        clicca(bottoneSalva);
-    }
-
     public void annulla() {
         clicca(bottoneAnnulla);
         wait.until(ExpectedConditions.urlMatches(".*/categorie$"));
@@ -137,13 +106,9 @@ public class CategoriePage extends BasePage {
         try {
             attendiScomparsa(riga(nome));
             return true;
-        } catch (org.openqa.selenium.TimeoutException e) {
+        } catch (TimeoutException e) {
             return false;
         }
-    }
-
-    public boolean isSalvaAbilitato() {
-        return attendiVisibile(bottoneSalva).isEnabled();
     }
 
     public String descrizioneInLista(String nome) {
@@ -155,9 +120,7 @@ public class CategoriePage extends BasePage {
         return leggiTesto(cellaNome(nome)).strip();
     }
 
-    // Quanti elementi <tag> ci sono DENTRO la cella del nome.
-    // Se il nome contiene "<b>Dolci</b>" e la pagina è sicura, deve essere 0:
-    // il tag va mostrato come testo, non interpretato come grassetto.
+    // Quanti elementi <tag> ci sono DENTRO la cella del nome (deve essere 0: niente XSS)
     public int contaTagNelNome(String nome, String tag) {
         attendiVisibile(cellaNome(nome));
         return driver.findElements(By.xpath(
@@ -166,18 +129,5 @@ public class CategoriePage extends BasePage {
 
     public String valoreDescrizioneNelForm() {
         return attendiVisibile(inputDescrizione).getDomProperty("value");
-    }
-
-    public String titolo() {
-        return leggiTesto(titoloPagina);
-    }
-
-    public String erroreNelForm() {
-        return leggiTesto(erroreForm);
-    }
-
-    // Notifica temporanea di Angular Material (MatSnackBar), come "Verifica Notifica" in Robot
-    public boolean isNotificaVisibile(String testo) {
-        return isVisibile(By.xpath("//mat-snack-bar-container[contains(., '" + testo + "')]"));
     }
 }

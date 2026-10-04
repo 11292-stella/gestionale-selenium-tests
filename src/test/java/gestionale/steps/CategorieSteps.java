@@ -1,4 +1,3 @@
-
 package gestionale.steps;
 
 import gestionale.pages.CategoriePage;
@@ -14,9 +13,9 @@ import io.restassured.response.Response;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+// Titolo, Salva, errore, notifica e conferma sono in CommonSteps
 public class CategorieSteps {
 
     private final CategoriePage categorie = new CategoriePage();
@@ -80,8 +79,7 @@ public class CategorieSteps {
     @Allora("vedo in lista le categorie:")
     public void vedoInListaLeCategorie(List<String> nomi) {
         for (String nome : nomi) {
-            assertTrue(categorie.isInLista(nome),
-                    "La categoria '" + nome + "' doveva essere in lista");
+            vedoLaCategoriaInLista(nome);
         }
     }
 
@@ -153,36 +151,9 @@ public class CategorieSteps {
         categorie.svuotaNome();
     }
 
-    @E("clicco Salva")
-    public void cliccoSalva() {
-        categorie.cliccaSalva();
-    }
-
-    @Allora("il titolo della pagina è {string}")
-    public void ilTitoloDellaPaginaE(String titoloAtteso) {
-        assertEquals(titoloAtteso, categorie.titolo());
-    }
-
     @E("il form contiene la descrizione {string}")
     public void ilFormContieneLaDescrizione(String attesa) {
         assertEquals(attesa, categorie.valoreDescrizioneNelForm());
-    }
-
-    @Allora("il bottone Salva è disabilitato")
-    public void ilBottoneSalvaEDisabilitato() {
-        assertFalse(categorie.isSalvaAbilitato(), "Il bottone Salva doveva essere disabilitato");
-    }
-
-    @Allora("il bottone Salva è abilitato")
-    public void ilBottoneSalvaEAbilitato() {
-        assertTrue(categorie.isSalvaAbilitato(), "Il bottone Salva doveva essere abilitato");
-    }
-
-    @Allora("vedo l'errore nel form {string}")
-    public void vedoLErroreNelForm(String atteso) {
-        String errore = categorie.erroreNelForm();
-        assertTrue(errore.contains(atteso),
-                "Nel form doveva comparire '" + atteso + "', invece c'è: '" + errore + "'");
     }
 
     @E("resto sul form nuova categoria")
@@ -260,18 +231,6 @@ public class CategorieSteps {
         ctx.testoConferma = categorie.elimina(ctx.nomeCategoria, false);
     }
 
-    @Allora("il browser ha chiesto conferma con un messaggio")
-    public void ilBrowserHaChiestoConferma() {
-        assertFalse(ctx.testoConferma == null || ctx.testoConferma.isBlank(),
-                "Il confirm() doveva avere un messaggio");
-    }
-
-    @Allora("vedo la notifica {string}")
-    public void vedoLaNotifica(String testo) {
-        assertTrue(categorie.isNotificaVisibile(testo),
-                "Doveva comparire la notifica: " + testo);
-    }
-
     // ---------------------------------------------------------------
     // Verifiche nel backend (API)
     // ---------------------------------------------------------------
@@ -307,6 +266,7 @@ public class CategorieSteps {
                 "La categoria NON doveva essere cancellata dal backend");
     }
 
+    // Usato anche dai test dei prodotti
     @E("nel backend il prodotto esiste ancora")
     public void nelBackendIlProdottoEsisteAncora() {
         assertEquals(200, ApiClient.leggiProdotto(ctx.prodottoId).statusCode(),
